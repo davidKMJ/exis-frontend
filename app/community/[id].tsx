@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
 import { Heading } from "@/components/ui/heading";
@@ -24,37 +24,7 @@ import { DateTime, Settings } from "luxon";
 import { formatRelativeDate, Locale } from "@/utils/relative-date";
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
-
-// Mock data (should be replaced with real data fetching)
-const sampleQuestions = [
-    {
-        id: 1,
-        title: "턱걸이 힘을 기르는 최고의 방법은 무엇인가요?",
-        author: "운동매니아",
-        likes: 24,
-        createdAt: DateTime.now().minus({ hours: 2 }),
-        tags: ["근력", "턱걸이"],
-        content:
-            "턱걸이 힘을 기르기 위한 최고의 방법은 무엇일까요? 다양한 운동법과 팁을 공유해주세요!",
-        aiResponse:
-            "턱걸이 힘을 기르기 위해서는 점진적 과부하 원칙을 적용한 보조 운동(예: 네거티브 턱걸이, 밴드 턱걸이)과 충분한 휴식, 영양 섭취가 중요합니다. 주 2~3회 꾸준히 연습해보세요!",
-        replies: [
-            {
-                id: 1,
-                author: "헬스초보",
-                content: "저는 밴드 턱걸이로 시작해서 점점 힘이 붙었어요!",
-                createdAt: DateTime.now().minus({ hours: 1, minutes: 10 }),
-            },
-            {
-                id: 2,
-                author: "운동고수",
-                content: "네거티브 턱걸이 강추합니다.",
-                createdAt: DateTime.now().minus({ minutes: 40 }),
-            },
-        ],
-    },
-    // ... more questions
-];
+import { supabase } from "@/lib/supabase";
 
 function CommunityDetailHeader({ title }: { title: string }) {
     const router = useRouter();
@@ -96,9 +66,11 @@ function CommunityDetailError() {
 }
 
 function CommunityDetailSuccess({
-    question,
+    post,
+    replies,
 }: {
-    question: (typeof sampleQuestions)[0];
+    post: any;
+    replies: any[];
 }) {
     const { colorScheme } = useColorScheme();
     const iconColor = `rgb(${
@@ -113,23 +85,23 @@ function CommunityDetailSuccess({
                     <Box className="flex-row items-center mb-4">
                         <Avatar size="md">
                             <AvatarFallbackText>
-                                {question.author.slice(0, 2)}
+                                {post.author?.slice(0, 2) ?? "?"}
                             </AvatarFallbackText>
                             <AvatarImage
                                 source={{
-                                    uri: "https://avatars.githubusercontent.com/u/62834557?v=4",
+                                    uri: post.author.avatar,
                                 }}
                             />
                         </Avatar>
                         <Box className="ml-3">
                             <Text className="text-typography-900 font-semibold text-base">
-                                {question.author}
+                                {post.author}
                             </Text>
                             <Box className="flex-row items-center mt-1">
                                 <Clock size={13} color={iconColor} />
                                 <Text className="text-typography-500 text-xs ml-1">
                                     {formatRelativeDate(
-                                        question.createdAt,
+                                        post.createdAt,
                                         Settings.defaultLocale as Locale
                                     )}
                                 </Text>
@@ -142,12 +114,12 @@ function CommunityDetailSuccess({
                         size="xl"
                         className="text-typography-900 mb-2 font-bold text-xl"
                     >
-                        {question.title}
+                        {post.title}
                     </Heading>
 
                     {/* Tags */}
                     <Box className="flex-row items-center mb-4 flex-wrap gap-2">
-                        {question.tags.map((tag, idx) => (
+                        {post.tags?.map((tag: string, idx: number) => (
                             <Box
                                 key={idx}
                                 className="bg-secondary-100 px-3 py-1 rounded-full"
@@ -162,7 +134,7 @@ function CommunityDetailSuccess({
                     {/* Content */}
                     <Box className="bg-secondary-50 rounded-2xl p-4 mb-6 border border-secondary-300 shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
                         <Text className="text-typography-900 text-base leading-relaxed">
-                            {question.content}
+                            {post.content}
                         </Text>
                     </Box>
 
@@ -171,17 +143,18 @@ function CommunityDetailSuccess({
                         <Box className="flex-row items-center">
                             <Heart size={20} color={iconColor} />
                             <Text className="ml-1 text-typography-700 font-semibold text-lg">
-                                {question.likes}
+                                {post.likes}
                             </Text>
                         </Box>
                         <Box className="flex-row items-center">
                             <MessageCircle size={20} color={iconColor} />
                             <Text className="ml-1 text-typography-700 font-semibold text-lg">
-                                {question.replies.length}
+                                {replies.length}
                             </Text>
                         </Box>
                     </Box>
 
+                    {/* AI Response Section (untouched) */}
                     <Box className="gap-4 mb-10">
                         <Box className="relative mb-2">
                             <LinearGradient
@@ -203,7 +176,10 @@ function CommunityDetailSuccess({
                                 className="rounded-2xl flex-row items-start shadow-[-1px_-1px_1px_rgba(0,0,0,0.05)] shadow-amber-400"
                                 style={{ position: "relative", zIndex: 0 }}
                             >
-                                <Box className="w-full h-full shadow-[1px_1px_1px_rgba(0,0,0,0.05)] shadow-cyan-400 bg-background-0 rounded-2xl p-4 flex-row items-start" style={{ zIndex: 2 }}>
+                                <Box
+                                    className="w-full h-full shadow-[1px_1px_1px_rgba(0,0,0,0.05)] shadow-cyan-400 bg-background-0 rounded-2xl p-4 flex-row items-start"
+                                    style={{ zIndex: 2 }}
+                                >
                                     <Box className="mr-3 mt-1">
                                         <Bot size={28} color={iconColor} />
                                     </Box>
@@ -212,15 +188,15 @@ function CommunityDetailSuccess({
                                             AI의 답변
                                         </Text>
                                         <Text className="text-primary-900 text-base leading-relaxed">
-                                            {question.aiResponse}
+                                            {/* AI response left untouched intentionally */}
                                         </Text>
                                     </Box>
                                 </Box>
                             </Box>
                         </Box>
-                        {question.replies.map((reply) => (
+                        {replies.map((reply) => (
                             <Box
-                                key={reply.id}
+                                key={reply.reply_id}
                                 className="flex-row items-start bg-secondary-50 rounded-xl p-3 border border-secondary-300 shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
                             >
                                 <Box className="mt-1 mr-2">
@@ -245,7 +221,7 @@ function CommunityDetailSuccess({
                                 </Box>
                             </Box>
                         ))}
-                        {question.replies.length === 0 && (
+                        {replies.length === 0 && (
                             <Text className="text-typography-400">
                                 아직 답변이 없습니다.
                             </Text>
@@ -259,9 +235,93 @@ function CommunityDetailSuccess({
 
 export default function CommunityDetailScreen() {
     const { id } = useLocalSearchParams();
-    const question = sampleQuestions.find((q) => q.id === Number(id));
-    if (!question) {
+    const [post, setPost] = useState<any | null>(null);
+    const [replies, setReplies] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!id) return;
+        setLoading(true);
+        setError(null);
+        const fetchData = async () => {
+            try {
+                // Fetch post with author
+                const { data: posts, error: postError } = await supabase
+                    .from("posts")
+                    .select(
+                        "post_id, title, content, tags, stats, created_at, profiles!posts_profile_id_profiles_profile_id_fk!inner(username)"
+                    )
+                    .eq("post_id", id)
+                    .limit(1);
+                if (postError) throw postError;
+                const post = posts && posts[0];
+                if (!post) throw new Error("Not found");
+                // Fix: handle profiles as array or object
+                let author = "익명";
+                if (post.profiles) {
+                    if (Array.isArray(post.profiles)) {
+                        author =
+                            (post.profiles as any[])[0]?.username ?? "익명";
+                    } else {
+                        author = (post.profiles as any).username ?? "익명";
+                    }
+                }
+                const adaptedPost = {
+                    ...post,
+                    author,
+                    likes: post.stats?.likes ?? 0,
+                    createdAt: DateTime.fromISO(post.created_at),
+                    tags: post.tags ?? [],
+                };
+                setPost(adaptedPost);
+
+                // Fetch replies with author
+                const { data: repliesData, error: repliesError } =
+                    await supabase
+                        .from("replies")
+                        .select(
+                            "reply_id, content, created_at, profiles!replies_profile_id_profiles_profile_id_fk!inner(username)"
+                        )
+                        .eq("post_id", id)
+                        .order("created_at", { ascending: true });
+                if (repliesError) throw repliesError;
+                const adaptedReplies = (repliesData || []).map((reply: any) => {
+                    let author = "익명";
+                    if (reply.profiles) {
+                        if (Array.isArray(reply.profiles)) {
+                            author =
+                                (reply.profiles as any[])[0]?.username ??
+                                "익명";
+                        } else {
+                            author = (reply.profiles as any).username ?? "익명";
+                        }
+                    }
+                    return {
+                        ...reply,
+                        author,
+                        createdAt: DateTime.fromISO(reply.created_at),
+                    };
+                });
+                setReplies(adaptedReplies);
+            } catch (err: any) {
+                setError(err.message || "Failed to load post");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [id]);
+
+    if (loading) {
+        return (
+            <Box className="flex-1 justify-center items-center bg-background-0">
+                <Text>Loading...</Text>
+            </Box>
+        );
+    }
+    if (error || !post) {
         return <CommunityDetailError />;
     }
-    return <CommunityDetailSuccess question={question} />;
+    return <CommunityDetailSuccess post={post} replies={replies} />;
 }

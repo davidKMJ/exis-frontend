@@ -1,3 +1,3 @@
 # exis-frontend
 
-Frontend code for app EXIS
+Frontend code for app EXIS.

@@ -73,7 +73,6 @@ const workoutData = [
 ];
 
 export default function DashboardScreen() {
-    const { logOut } = useAuthStore();
     const { colorScheme } = useColorScheme();
     const [workoutState, setWorkoutState] = useState(workoutData);
     const [containerWidth, setContainerWidth] = useState(0);
@@ -130,8 +129,11 @@ export default function DashboardScreen() {
         <Box className="flex-1 bg-background-0">
             <SafeAreaView style={{ flex: 1, marginBottom: 35 }}>
                 <Box className="flex-1 bg-background-0 p-5">
-                    <Heading size="xl" className="text-typography-900 mb-4">
-                        대시보드
+                    <Heading
+                        size="2xl"
+                        className="text-typography-900 mb-4 italic font-extrabold ml-1"
+                    >
+                        EXIS
                     </Heading>
                     <Box
                         className={`rounded-3xl border-2 bg-background-0 p-4 shadow-[0_2px_4px_rgba(0,0,0,0.2)] ${

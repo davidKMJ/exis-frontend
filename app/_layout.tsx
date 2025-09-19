@@ -1,3 +1,4 @@
+import "react-native-url-polyfill/auto";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import "@/global.css";
 import { useFonts } from "expo-font";
@@ -8,8 +9,9 @@ import "react-native-reanimated";
 import { useAuthStore } from "@/utils/auth-store";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { useModeStore } from "@/utils/mode-store";
-
 import { Settings } from "luxon";
+import { Session } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
 export {
     // Catch any errors thrown by the Layout component.
@@ -20,7 +22,6 @@ export const unstable_settings = {
     // Ensure that reloading on `/modal` keeps a back button present.
     initialRouteName: "(tabs)",
 };
-
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
@@ -51,14 +52,23 @@ export default function RootLayout() {
     }
 
     return (
-        <GluestackUIProvider mode={mode}> 
+        <GluestackUIProvider mode={mode}>
             <RootLayoutNav />
         </GluestackUIProvider>
     );
 }
 
 function RootLayoutNav() {
-    const { isLoggedIn, hasCompletedOnboarding } = useAuthStore();
+    const { isLoggedIn, hasCompletedOnboarding, setSession } = useAuthStore();
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+        });
+        supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+        });
+    }, []);
 
     return (
         <Stack>
